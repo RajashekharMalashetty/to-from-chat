@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const Chat = require("./models/chat.js");
 const methodOverride = require("method-override");
+const ExpressError = require("./ExpressError");
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -18,7 +19,7 @@ main()
     .catch(err => console.log(err));
 
 async function main(){
-    await mongoose.connect('mongodb://127.0.0.1:27017/whatsapp');
+    await mongoose.connect('mongodb://127.0.0.1:27017/fakewhatsapp');
 };
 
 //Index Route
@@ -30,6 +31,7 @@ app.get("/chats", async (req, res) => {
 
 //new route
 app.get("/chats/new", (req, res) =>{
+    throw new ExpressError(404, "Page not found");
     res.render("new.ejs")
 });
 
@@ -51,6 +53,16 @@ app.post("/chats", (req, res) => {
             console.log(err)
         });
     res.redirect("/chats");
+});
+
+//Show Route
+app.get("/chats/:id", async (req, res, next) => {
+    let { id } = req.params;
+    let chat = await Chat.findById(id);
+    if(!chat) {
+        next(new ExpressError(404, "chat not found"));
+    }
+    res.render("edit.ejs", { chat });
 });
 
 //Edit Route
@@ -85,6 +97,12 @@ app.delete("/chats/:id", async (req, res) => {
 app.get("/", (req, res) => {
     res.send("root is working");
 });
+
+//Error Handling Middleware
+app.use((err, req, res, next) => {
+    let {status=500, message="Some Error Occurred"} = err;
+    res.status(status).send(message);
+})
 
 app.listen(8080, () => {
     console.log("server is listening on port 8080");
