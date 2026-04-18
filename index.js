@@ -24,19 +24,23 @@ async function main(){
 
 //Index Route
 app.get("/chats", async (req, res) => {
+    try {
     let chats = await Chat.find();
-    // console.log(chats);
     res.render("index.ejs", {chats});
+    } catch(err) {
+        next(err);
+    }
 });
 
 //new route
 app.get("/chats/new", (req, res) =>{
-    throw new ExpressError(404, "Page not found");
+    // throw new ExpressError(404, "Page not found");
     res.render("new.ejs")
 });
 
 //Create Route
-app.post("/chats", (req, res) => {
+app.post("/chats", async (req, res) => {
+    try {
     let {from, to, msg} = req.body;
     let newChat = new Chat({
         from: from,
@@ -44,53 +48,65 @@ app.post("/chats", (req, res) => {
         msg: msg,
         created_at: new Date()
     });
-    newChat
-        .save()
-        .then(res => {
-            console.log("chat was saved");
-        })
-        .catch((err) => {
-            console.log(err)
-        });
+    await newChat.save()
     res.redirect("/chats");
+    }catch(err){
+        next(err);
+    }
 });
 
 //Show Route
 app.get("/chats/:id", async (req, res, next) => {
+    try {
     let { id } = req.params;
     let chat = await Chat.findById(id);
     if(!chat) {
         next(new ExpressError(404, "chat not found"));
     }
     res.render("edit.ejs", { chat });
+}catch(err){
+    next(err);
+}
 });
 
 //Edit Route
 app.get("/chats/:id/edit", async (req, res) => {
-    let {id} = req.params;
-    let chat = await Chat.findById(id);
-    res.render("edit.ejs", {chat});
+    try {
+        let {id} = req.params;
+        let chat = await Chat.findById(id);
+        res.render("edit.ejs", {chat});
+    }catch(err){
+        next(err);
+    }
 });
 
 //update Route
 app.put("/chats/:id", async (req, res) => {
-    let {id} = req.params;
-    let {msg: newMsg} = req.body;
-    let updatedChat = await Chat.findByIdAndUpdate(
-        id, 
-        {msg: newMsg}, 
-        {runValidators: true, new: true});
-    
-    console.log(updatedChat);
-    res.redirect("/chats");
+    try{
+        let {id} = req.params;
+        let {msg: newMsg} = req.body;
+        let updatedChat = await Chat.findByIdAndUpdate(
+            id, 
+            {msg: newMsg}, 
+            {runValidators: true, new: true});
+        
+        console.log(updatedChat);
+        res.redirect("/chats");
+        }catch(err){
+            next(err);
+        }
 })
 
 //destroy Route
 app.delete("/chats/:id", async (req, res) => {
-    let { id } = req.params;
-    let deletedChat = await Chat.findByIdAndDelete(id);
-    console.log(deletedChat);
-    res.redirect("/chats");
+    try {
+        let { id } = req.params;
+        let deletedChat = await Chat.findByIdAndDelete(id);
+        console.log(deletedChat);
+        res.redirect("/chats");
+    }catch(err){
+        next(err);
+    }
 });
 
 
